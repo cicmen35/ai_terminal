@@ -1,46 +1,43 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QSplitter>
-#include <QVBoxLayout>
-#include <QTextEdit>
-#include <QLineEdit>
+#include <wx/wx.h>
+#include <wx/splitter.h>
+#include <wx/textctrl.h>
+#include <wx/process.h>
+#include <wx/txtstrm.h>
 
-class MainWindow : public QMainWindow
+class MainWindow : public wxFrame
 {
-    Q_OBJECT
-
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
-
-private slots:
-    // Terminal input handling
-    void onCommandEntered();
-    
-    // Future AI assistant integration
-    void onAskAssistant();
+    MainWindow(const wxString& title);
 
 private:
-    // Main layout components
-    QWidget *centralWidget;
-    QSplitter *mainSplitter;
-    
-    // Terminal components
-    QWidget *terminalPanel;
-    QTextEdit *terminalOutput;
-    QLineEdit *terminalInput;
-    
-    // AI Assistant components (to be expanded)
-    QWidget *assistantPanel;
-    QTextEdit *assistantOutput;
-    QLineEdit *assistantInput;
-    
+    // Event handlers
+    void OnCommandEntered(wxCommandEvent& event);
+    void OnAskAssistant(wxCommandEvent& event);
+    void OnProcessTerminated(wxProcessEvent& event);
+    void OnIdle(wxIdleEvent& event);
+
     // Helper methods
-    void setupTerminalPanel();
-    void setupAssistantPanel();
-    void executeCommand(const QString &command);
+    void SetupUI();
+    void ExecuteCommand(const wxString& command);
+
+    // UI Components
+    wxSplitterWindow* mainSplitter;
+    wxPanel* terminalPanel;
+    wxTextCtrl* terminalOutput;
+    wxTextCtrl* terminalInput;
+    wxPanel* assistantPanel;
+    wxTextCtrl* assistantOutput;
+    wxTextCtrl* assistantInput;
+
+    // Process handling
+    wxProcess* currentProcess;
+    wxString currentPath;
+
+    // Event table declaration
+    wxDECLARE_EVENT_TABLE();
 };
 
 #endif // MAINWINDOW_H
