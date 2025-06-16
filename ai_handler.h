@@ -11,7 +11,7 @@
 class AIHandler {
 public:
     AIHandler();
-    wxString GetAIResponse(const wxString& userInput);
+    wxString GetAIResponse(const wxString& userInput, const wxString& terminalContext);
 
 private:
     std::string apiKey;

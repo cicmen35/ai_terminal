@@ -135,8 +135,12 @@ void MainWindow::OnAskAssistant(wxCommandEvent& event)
     assistantInput->Clear();
     assistantOutput->AppendText("You: " + question + "\n");
 
-    // Get response from AI Handler
-    wxString aiResponse = aiHandler->GetAIResponse(question);
+    // Get the last 1000 characters from the terminal output as context
+    wxString terminalContent = terminalOutput->GetValue();
+    wxString context = terminalContent.Right(1000); // Get last 1000 chars
+
+    // Get response from AI Handler, now with context
+    wxString aiResponse = aiHandler->GetAIResponse(question, context);
     assistantOutput->AppendText("Assistant: " + aiResponse + "\n");
     assistantOutput->ShowPosition(assistantOutput->GetLastPosition()); // Scroll to show the latest response
 }

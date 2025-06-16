@@ -45,7 +45,7 @@ bool AIHandler::LoadAPIKey() {
     return false;
 }
 
-wxString AIHandler::GetAIResponse(const wxString& userInput) {
+wxString AIHandler::GetAIResponse(const wxString& userInput, const wxString& terminalContext) {
     if (apiKey.empty()) {
         return "Error: API Key not configured.";
     }
@@ -55,10 +55,18 @@ wxString AIHandler::GetAIResponse(const wxString& userInput) {
     cli.set_default_headers({{"Authorization", "Bearer " + apiKey}});
     // Server certificate verification is on by default with SSLClient
 
+    // Construct a system message to guide the AI
+    std::string system_prompt = "You are the best terminal expert in the world integrated into a person's terminal. The user has provided the following terminal history as context. Use it to answer their question.";
+
+    // Combine the context and the user's question
+    std::string user_content = "--- Terminal Context ---\n" + terminalContext.ToStdString() + 
+                               "\n\n--- User Question ---\n" + userInput.ToStdString();
+
     json requestBody = {
         {"model", "gpt-3.5-turbo"},
         {"messages", json::array({
-            {{"role", "user"}, {"content", userInput.ToStdString()}}
+            {{"role", "system"}, {"content", system_prompt}},
+            {{"role", "user"}, {"content", user_content}}
         })}
     };
 
