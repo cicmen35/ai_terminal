@@ -20,8 +20,15 @@ MainWindow::MainWindow(const wxString& title)
 {
     currentProcess = nullptr;
     currentPath = wxGetCwd();
+    aiHandler = new AIHandler(); // Initialize AI Handler
     SetupUI();
     Centre();
+}
+
+// Destructor to clean up AIHandler
+MainWindow::~MainWindow()
+{
+    delete aiHandler; // Clean up AI Handler
 }
 
 void MainWindow::SetupUI()
@@ -123,9 +130,15 @@ void MainWindow::ExecuteCommand(const wxString& command)
 void MainWindow::OnAskAssistant(wxCommandEvent& event)
 {
     wxString question = assistantInput->GetValue();
+    if (question.IsEmpty()) return;
+
     assistantInput->Clear();
     assistantOutput->AppendText("You: " + question + "\n");
-    assistantOutput->AppendText("Assistant: AI integration is not yet implemented.\n");
+
+    // Get response from AI Handler
+    wxString aiResponse = aiHandler->GetAIResponse(question);
+    assistantOutput->AppendText("Assistant: " + aiResponse + "\n");
+    assistantOutput->ShowPosition(assistantOutput->GetLastPosition()); // Scroll to show the latest response
 }
 
 void MainWindow::OnIdle(wxIdleEvent& event)

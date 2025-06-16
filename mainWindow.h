@@ -6,11 +6,13 @@
 #include <wx/textctrl.h>
 #include <wx/process.h>
 #include <wx/txtstrm.h>
+#include "ai_handler.h" // Include the new AI handler
 
 class MainWindow : public wxFrame
 {
 public:
     MainWindow(const wxString& title);
+    ~MainWindow(); // Declare the destructor
 
 private:
     // Event handlers
@@ -35,6 +37,9 @@ private:
     // Process handling
     wxProcess* currentProcess;
     wxString currentPath;
+
+    // AI Handler
+    AIHandler* aiHandler; 
 
     // Event table declaration
     wxDECLARE_EVENT_TABLE();
