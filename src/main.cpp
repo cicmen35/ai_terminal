@@ -15,7 +15,7 @@ wxIMPLEMENT_APP(MyApp);
 bool MyApp::OnInit()
 {
     // Create the main application window
-    MainWindow *frame = new MainWindow("AI Terminal Emulator");
+    MainWindow *frame = new MainWindow("AI Terminal");
     frame->Show(true);
     return true;
 }

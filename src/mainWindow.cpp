@@ -1,4 +1,5 @@
 #include "mainWindow.h"
+#include <wx/filename.h> // For wxFileName and path normalization
 
 // IDs for the controls and the menu commands
 enum
@@ -89,39 +90,68 @@ void MainWindow::OnCommandEntered(wxCommandEvent& event)
 
 void MainWindow::ExecuteCommand(const wxString& command)
 {
-    // condition for user trying to open a file via nano/vim
-    if (command.StartsWith("nano ") || command.StartsWith("vim "))
-    {
-        terminalOutput->AppendText(command.StartsWith("nano ") ? "nano is temporarily unavailable.\n" : "vim is temporarily unavailable.\n");
+    wxString mutableCommand = command; // Create a non-const copy
+    wxString trimmedCommand = mutableCommand.Trim(); // Trim the copy
+
+    // 1. Handle nano/vim (block them)
+    if (trimmedCommand.StartsWith("nano") || trimmedCommand.StartsWith("vim")) { // Catches "nano", "vim", "nano file", "vim file"
+        if (trimmedCommand == "nano" || trimmedCommand.StartsWith("nano ")) {
+            terminalOutput->AppendText("nano is temporarily unavailable.\n");
+        } else if (trimmedCommand == "vim" || trimmedCommand.StartsWith("vim ")) {
+            terminalOutput->AppendText("vim is temporarily unavailable.\n");
+        }
         return;
     }
 
-    // Handle 'clear' command
-    if (command == "clear")
-    {
+    // 2. Handle clear
+    if (trimmedCommand == "clear") {
         terminalOutput->Clear();
         return;
     }
 
-    // Handle 'cd' command separately
-    if (command.StartsWith("cd "))
-    {
-        wxString newDir = command.Mid(3);
-        if (!wxSetWorkingDirectory(newDir))
-        {
-            terminalOutput->AppendText("cd: No such file or directory: " + newDir + "\n");
+    // 3. Handle cd commands
+    if (trimmedCommand == "cd") { // 'cd' with no arguments
+        currentPath = wxGetHomeDir();
+        wxSetWorkingDirectory(currentPath); // Update internal CWD for wxProcess
+        terminalOutput->AppendText(currentPath + "\n");
+        return; 
+    } else if (trimmedCommand.StartsWith("cd ")) { // 'cd <path>'
+        wxString newPathArg = trimmedCommand.Mid(2).Trim(); // Get argument after "cd "
+
+        if (newPathArg.IsEmpty()) { // Handles "cd " (cd followed by only spaces)
+            currentPath = wxGetHomeDir();
+        } else {
+            wxFileName pathBuilder;
+            if (wxIsAbsolutePath(newPathArg)) {
+                pathBuilder.Assign(newPathArg);
+            } else {
+                // For relative paths, assign the relative path and then make it absolute
+                pathBuilder.Assign(newPathArg);
+                pathBuilder.MakeAbsolute(currentPath); 
+            }
+            // Normalize path (handles '..', redundant separators, etc.) and keep case.
+            // Normalization should happen *after* path is potentially made absolute and combined.
+            pathBuilder.Normalize(wxPATH_NORM_ALL & ~wxPATH_NORM_CASE);
+
+            if (wxDirExists(pathBuilder.GetFullPath())) {
+                currentPath = pathBuilder.GetFullPath();
+            } else {
+                terminalOutput->AppendText("cd: no such file or directory: " + newPathArg + "\n");
+                return; // Return if path is invalid
+            }
         }
-        currentPath = wxGetCwd();
-        terminalOutput->AppendText("Current directory: " + currentPath + "\n");
-        return;
+        wxSetWorkingDirectory(currentPath); // Update internal CWD for wxProcess
+        terminalOutput->AppendText(currentPath + "\n");
+        return; // Return after successful cd
     }
 
+    // 4. If none of the above, execute as a general command
     currentProcess = new wxProcess(this);
     currentProcess->Redirect();
 
+    // Use the original 'command' for wxExecute for fidelity, not trimmedCommand.
     long pid = wxExecute(command, wxEXEC_ASYNC, currentProcess);
-    if (!pid)
-    {
+    if (!pid) {
         terminalOutput->AppendText("Error: Command could not be executed.\n");
         delete currentProcess;
         currentProcess = nullptr;
