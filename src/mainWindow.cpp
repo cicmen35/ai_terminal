@@ -1,178 +1,192 @@
 #include "mainWindow.h"
-#include <QProcess>
-#include <QDebug>
-#include <QScrollBar>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+// IDs for the controls and the menu commands
+enum
 {
-    // Set window properties
-    setWindowTitle("AI Terminal Emulator");
-    resize(1200, 800);
-    
-    // Create central widget and main layout
-    centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
-    
-    // Create main splitter to divide terminal and assistant panels
-    mainSplitter = new QSplitter(Qt::Horizontal, centralWidget);
-    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
-    mainLayout->addWidget(mainSplitter);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // Setup terminal and assistant panels
-    setupTerminalPanel();
-    setupAssistantPanel();
-    
-    // Set initial splitter sizes (70% terminal, 30% assistant)
-    QList<int> sizes;
-    sizes << (width() * 0.7) << (width() * 0.3);
-    mainSplitter->setSizes(sizes);
+    ID_TERMINAL_INPUT = 1,
+    ID_ASSISTANT_INPUT = 2
+};
+
+// Event table for MainWindow
+wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
+    EVT_TEXT_ENTER(ID_TERMINAL_INPUT, MainWindow::OnCommandEntered)
+    EVT_TEXT_ENTER(ID_ASSISTANT_INPUT, MainWindow::OnAskAssistant)
+    EVT_IDLE(MainWindow::OnIdle)
+    EVT_END_PROCESS(wxID_ANY, MainWindow::OnProcessTerminated)
+wxEND_EVENT_TABLE()
+
+MainWindow::MainWindow(const wxString& title)
+    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1200, 800))
+{
+    currentProcess = nullptr;
+    currentPath = wxGetHomeDir(); // Set initial path to user's home directory
+    wxSetWorkingDirectory(currentPath); // Change the application's CWD to user's home
+    aiHandler = new AIHandler(); // Initialize AI Handler
+    SetupUI();
+    Centre();
 }
 
+// Destructor to clean up AIHandler
 MainWindow::~MainWindow()
 {
-    // Cleanup will be handled by Qt's parent-child relationship
+    delete aiHandler; // Clean up AI Handler
 }
 
-void MainWindow::setupTerminalPanel()
+void MainWindow::SetupUI()
 {
-    // Create terminal panel container
-    terminalPanel = new QWidget(mainSplitter);
-    QVBoxLayout *terminalLayout = new QVBoxLayout(terminalPanel);
-    terminalLayout->setContentsMargins(5, 5, 5, 5);
-    
-    // Create terminal output display
-    terminalOutput = new QTextEdit(terminalPanel);
-    terminalOutput->setReadOnly(true);
-    terminalOutput->setStyleSheet("QTextEdit { background-color: #282828; color: #F8F8F2; font-family: 'Courier New', monospace; }");
-    terminalLayout->addWidget(terminalOutput);
-    
-    // Create terminal input field
-    terminalInput = new QLineEdit(terminalPanel);
-    terminalInput->setStyleSheet("QLineEdit { background-color: #282828; color: #F8F8F2; font-family: 'Courier New', monospace; }");
-    terminalInput->setPlaceholderText("Enter command...");
-    terminalLayout->addWidget(terminalInput);
-    
-    // Connect signals
-    connect(terminalInput, &QLineEdit::returnPressed, this, &MainWindow::onCommandEntered);
-    
-    // Add welcome message
-    terminalOutput->append("Welcome to AI Terminal Emulator");
-    terminalOutput->append("Type commands in the input field below.");
-    terminalOutput->append("-----------------------------------");
+    // Main splitter window
+    mainSplitter = new wxSplitterWindow(this, wxID_ANY);
+    mainSplitter->SetMinimumPaneSize(200);
+
+    // --- Terminal Panel (Left) ---
+    terminalPanel = new wxPanel(mainSplitter);
+    wxBoxSizer* terminalSizer = new wxBoxSizer(wxVERTICAL);
+    terminalPanel->SetSizer(terminalSizer);
+
+    terminalOutput = new wxTextCtrl(terminalPanel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
+    terminalOutput->SetBackgroundColour(wxColour(40, 40, 40));
+    terminalOutput->SetForegroundColour(wxColour(248, 248, 242));
+    terminalOutput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    terminalSizer->Add(terminalOutput, 1, wxEXPAND | wxALL, 5);
+
+    terminalInput = new wxTextCtrl(terminalPanel, ID_TERMINAL_INPUT, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    terminalInput->SetBackgroundColour(wxColour(40, 40, 40));
+    terminalInput->SetForegroundColour(wxColour(248, 248, 242));
+    terminalInput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    terminalSizer->Add(terminalInput, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
+
+    // --- Assistant Panel (Right) ---
+    assistantPanel = new wxPanel(mainSplitter);
+    wxBoxSizer* assistantSizer = new wxBoxSizer(wxVERTICAL);
+    assistantPanel->SetSizer(assistantSizer);
+
+    assistantOutput = new wxTextCtrl(assistantPanel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
+    assistantOutput->SetBackgroundColour(wxColour(46, 52, 64));
+    assistantOutput->SetForegroundColour(wxColour(236, 239, 244));
+    assistantSizer->Add(assistantOutput, 1, wxEXPAND | wxALL, 5);
+
+    assistantInput = new wxTextCtrl(assistantPanel, ID_ASSISTANT_INPUT, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    assistantInput->SetBackgroundColour(wxColour(46, 52, 64));
+    assistantInput->SetForegroundColour(wxColour(236, 239, 244));
+    assistantSizer->Add(assistantInput, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
+
+    // Split the window and set initial messages
+    mainSplitter->SplitVertically(terminalPanel, assistantPanel, 800);
+    terminalOutput->AppendText("Welcome to AI Terminal Emulator\n");
+    assistantOutput->AppendText("AI Terminal Assistant\n");
 }
 
-void MainWindow::setupAssistantPanel()
+void MainWindow::OnCommandEntered(wxCommandEvent& event)
 {
-    // Create assistant panel container
-    assistantPanel = new QWidget(mainSplitter);
-    QVBoxLayout *assistantLayout = new QVBoxLayout(assistantPanel);
-    assistantLayout->setContentsMargins(5, 5, 5, 5);
-    
-    // Create assistant output display
-    assistantOutput = new QTextEdit(assistantPanel);
-    assistantOutput->setReadOnly(true);
-    assistantOutput->setStyleSheet("QTextEdit { background-color: #2E3440; color: #ECEFF4; font-family: 'Segoe UI', sans-serif; }");
-    assistantLayout->addWidget(assistantOutput);
-    
-    // Create assistant input field
-    assistantInput = new QLineEdit(assistantPanel);
-    assistantInput->setStyleSheet("QLineEdit { background-color: #2E3440; color: #ECEFF4; font-family: 'Segoe UI', sans-serif; }");
-    assistantInput->setPlaceholderText("Ask AI assistant...");
-    assistantLayout->addWidget(assistantInput);
-    
-    // Connect signals
-    connect(assistantInput, &QLineEdit::returnPressed, this, &MainWindow::onAskAssistant);
-    
-    // Add welcome message
-    assistantOutput->append("AI Terminal Assistant");
-    assistantOutput->append("Ask questions about commands or get help with terminal tasks.");
-    assistantOutput->append("-----------------------------------");
+    wxString command = terminalInput->GetValue();
+    if (command.IsEmpty()) return;
+
+    terminalOutput->AppendText("\n> " + command + "\n");
+    terminalInput->Clear();
+
+    ExecuteCommand(command);
 }
 
-void MainWindow::onCommandEntered()
+void MainWindow::ExecuteCommand(const wxString& command)
 {
-    QString command = terminalInput->text();
-    terminalInput->clear();
-    
-    // Display the command in the terminal output
-    terminalOutput->append("> " + command);
-    
-    // Execute the command (to be implemented)
-    executeCommand(command);
-}
-
-void MainWindow::onAskAssistant()
-{
-    QString question = assistantInput->text();
-    assistantInput->clear();
-    
-    // Display the question in the assistant output
-    assistantOutput->append("You: " + question);
-    
-    // This is a placeholder - we'll implement the actual AI integration later
-    assistantOutput->append("Assistant: I'll help you with that in a future implementation!");
-}
-
-void MainWindow::executeCommand(const QString &command)
-{
-    // Skip empty commands
-    if (command.trimmed().isEmpty()) {
+    // condition for user trying to open a file via nano/vim
+    if (command.StartsWith("nano ") || command.StartsWith("vim "))
+    {
+        terminalOutput->AppendText(command.StartsWith("nano ") ? "nano is temporarily unavailable.\n" : "vim is temporarily unavailable.\n");
         return;
     }
-    
-    // Create a new process
-    QProcess *process = new QProcess(this);
-    
-    // Connect signals to capture output
-    connect(process, &QProcess::readyReadStandardOutput, [this, process]() {
-        QByteArray output = process->readAllStandardOutput();
-        terminalOutput->append(QString::fromLocal8Bit(output).trimmed());
-    });
-    
-    connect(process, &QProcess::readyReadStandardError, [this, process]() {
-        QByteArray error = process->readAllStandardError();
-        terminalOutput->append(QString::fromLocal8Bit(error).trimmed());
-    });
-    
-    // Connect finished signal to handle cleanup
-    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this, process, command](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitStatus == QProcess::CrashExit) {
-            terminalOutput->append("Process crashed");
-        } else if (exitCode != 0) {
-            terminalOutput->append(QString("Command exited with code %1").arg(exitCode));
-        }
-        
-        // Scroll to bottom
-        terminalOutput->verticalScrollBar()->setValue(terminalOutput->verticalScrollBar()->maximum());
-        
-        // Clean up the process
-        process->deleteLater();
-    });
-    
-    // Start the process with the command
-    process->setProcessChannelMode(QProcess::SeparateChannels);
-    
-    // Handle cd commands specially since QProcess can't change the working directory of the application
-    if (command.startsWith("cd ")) {
-        QString newDir = command.mid(3).trimmed();
-        
-        // Handle home directory shorthand
-        if (newDir == "~" || newDir.startsWith("~/")) {
-            newDir.replace(0, 1, QDir::homePath());
-        }
-        
-        // Try to change directory
-        if (QDir::setCurrent(newDir)) {
-            terminalOutput->append(QString("Changed directory to: %1").arg(QDir::currentPath()));
-        } else {
-            terminalOutput->append(QString("Failed to change directory to: %1").arg(newDir));
-        }
+
+    // Handle 'clear' command
+    if (command == "clear")
+    {
+        terminalOutput->Clear();
         return;
     }
-    
-    // For all other commands, start the process
-    process->start("/bin/sh", QStringList() << "-c" << command);
+
+    // Handle 'cd' command separately
+    if (command.StartsWith("cd "))
+    {
+        wxString newDir = command.Mid(3);
+        if (!wxSetWorkingDirectory(newDir))
+        {
+            terminalOutput->AppendText("cd: No such file or directory: " + newDir + "\n");
+        }
+        currentPath = wxGetCwd();
+        terminalOutput->AppendText("Current directory: " + currentPath + "\n");
+        return;
+    }
+
+    currentProcess = new wxProcess(this);
+    currentProcess->Redirect();
+
+    long pid = wxExecute(command, wxEXEC_ASYNC, currentProcess);
+    if (!pid)
+    {
+        terminalOutput->AppendText("Error: Command could not be executed.\n");
+        delete currentProcess;
+        currentProcess = nullptr;
+    }
+}
+
+void MainWindow::OnAskAssistant(wxCommandEvent& event)
+{
+    wxString question = assistantInput->GetValue();
+    if (question.IsEmpty()) return;
+
+    assistantInput->Clear();
+    assistantOutput->AppendText("You: " + question + "\n");
+
+    // Get the last 1000 characters from the terminal output as context
+    wxString terminalContent = terminalOutput->GetValue();
+    wxString context = terminalContent.Right(1000); // Get last 1000 chars
+
+    // Get response from AI Handler, now with context
+    wxString aiResponse = aiHandler->GetAIResponse(question, context);
+    assistantOutput->AppendText("Assistant: " + aiResponse + "\n");
+    assistantOutput->ShowPosition(assistantOutput->GetLastPosition()); // Scroll to show the latest response
+}
+
+void MainWindow::OnIdle(wxIdleEvent& event)
+{
+    if (!currentProcess) return;
+
+    wxInputStream* in = currentProcess->GetInputStream();
+    if (in && in->IsOk() && in->CanRead())
+    {
+        wxTextInputStream text_in(*in);
+        while (in->CanRead())
+        {
+            terminalOutput->AppendText(text_in.ReadLine() + "\n");
+        }
+    }
+
+    wxInputStream* err = currentProcess->GetErrorStream();
+    if (err && err->IsOk() && err->CanRead())
+    {
+        wxTextInputStream text_err(*err);
+        while (err->CanRead())
+        {
+            terminalOutput->AppendText(text_err.ReadLine() + "\n");
+        }
+    }
+}
+
+void MainWindow::OnProcessTerminated(wxProcessEvent& event)
+{
+    wxInputStream* in = currentProcess->GetInputStream();
+    if (in && in->IsOk() && in->CanRead())
+    {
+        wxTextInputStream text_in(*in);
+        while (in->CanRead())
+        {
+            terminalOutput->AppendText(text_in.ReadLine() + "\n");
+        }
+    }
+
+    if (event.GetExitCode() != 0)
+    {
+        terminalOutput->AppendText(wxString::Format("Process %ld terminated with error code %d.\n", (long)event.GetPid(), event.GetExitCode()));
+    }
+    delete currentProcess;
+    currentProcess = nullptr;
 }
