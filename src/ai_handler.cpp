@@ -5,6 +5,8 @@
 #include <fstream>               // For file reading (for .env)
 #include <iostream>              // For basic I/O, can be removed if not debugging
 #include <cstdlib>               // For getenv, though we'll parse .env manually for robustness
+#include <wx/stdpaths.h>         // For wxStandardPaths
+#include <wx/filename.h>         // For wxFileName
 
 // Use nlohmann::json for convenience
 using json = nlohmann::json;
@@ -22,7 +24,11 @@ bool AIHandler::LoadAPIKey() {
     // This is a simplified .env parser. For a real app, a more robust parser might be needed.
     // It expects OPENAI_API_TOKEN=your_key_here on a line in .env
     // The .env file should be in the same directory as the executable, or adjust path.
-    std::ifstream envFile(".env");
+    wxString exePath = wxStandardPaths::Get().GetExecutablePath();
+    wxFileName exeFile(exePath);
+    wxString envFilePath = exeFile.GetPath() + wxFileName::GetPathSeparator() + ".env";
+
+    std::ifstream envFile(envFilePath.ToStdString());
     std::string line;
     if (envFile.is_open()) {
         while (std::getline(envFile, line)) {
