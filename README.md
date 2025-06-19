@@ -17,7 +17,7 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 
 ## Prerequisites (macOS)
 
-- C++11 (or newer) compiler.
+- C++17 (or newer) compiler.
 - wxWidgets: `brew install wxwidgets`
 - OpenSSL v3: `brew install openssl@3` (for OpenAI API HTTPS)
 
@@ -35,7 +35,7 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 From the project root directory:
 
 ```bash
-g++ -std=c++11 src/main.cpp src/mainWindow.cpp src/ai_handler.cpp -o ai-terminal `wx-config --cppflags --libs` -I./src/headers -I./src/libs -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto
+g++ -std=c++17 src/main.cpp src/mainWindow.cpp src/ai_handler.cpp -o ai-terminal `wx-config --cppflags --libs` -I./src/headers -I./src/libs -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto
 ```
 
 ## Running
@@ -53,7 +53,6 @@ From the project root directory:
 - `src/libs/`: Third-party header-only libraries.
 - `.env`: OpenAI API key storage.
 - `.gitignore`: Git ignore rules.
-
 
 ## Potential Future Enhancements
 
