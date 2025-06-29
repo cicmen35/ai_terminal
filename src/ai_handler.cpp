@@ -55,14 +55,14 @@ wxString AIHandler::GetAIResponse(const wxString& userInput, const wxString& ter
     if (apiKey.empty()) {
         return "Error: API key not configured.";
     }
-    std::cout << "API key successfully configured."
+    std::cout << "API key successfully configured.";
     // Use SSLClient for HTTPS connections
     httplib::SSLClient cli("api.openai.com");
     cli.set_default_headers({{"Authorization", "Bearer " + apiKey}});
     // Server certificate verification is on by default with SSLClient
 
     // Construct a system message to guide the AI
-    std::string system_prompt = "You are the best terminal expert in the world integrated into a person's terminal. The user has provided the following terminal history as context. Use it to answer their requests.";
+    std::string system_prompt = "You are the best terminal expert in the world integrated into a person's terminal. The user has provided the following terminal history as context. Use it to answer their requests and suggest commands.";
 
     // Combine the context and the user's question
     std::string user_content = "--- Terminal Context ---\n" + terminalContext.ToStdString() + 

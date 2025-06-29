@@ -12,39 +12,52 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 
 ## Compatibility
 
-- **macOS:** Currently developed and tested on macOS. Build instructions below are for macOS with Homebrew.
-- **Other Platforms (Windows/Linux):** The core is portable. For a full cross-platform build, migrating to CMake and providing platform-specific dependency (wxWidgets, OpenSSL) instructions is recommended.
+- **macOS:** Developed and tested on macOS.
+- **Other Platforms (Windows/Linux):** The project now uses CMake, which makes it highly portable. You will need to ensure wxWidgets and OpenSSL are installed and discoverable by CMake on your system.
 
 ## Prerequisites (macOS)
 
-- C++17 (or newer) compiler.
-- wxWidgets: `brew install wxwidgets`
-- OpenSSL v3: `brew install openssl@3` (for OpenAI API HTTPS)
+- C++17 (or newer) compiler 
+- Homebrew package manager.
+- Install all dependencies with one command:
+  ```bash
+  brew install cmake wxwidgets openssl@3
+  ```
 
-## Configuration: OpenAI API Key
+## API Key Setup
 
-1.  Create a `.env` file in the project root.
-2.  Add your API key:
-    ```
-    OPENAI_API_TOKEN=your_actual_api_key_here
-    ```
+1. Create a `.env` file in the project's root directory.
+2. Add your OpenAI API key to it in the following format:
+   ```
+   OPENAI_API_TOKEN=your_secret_key_here
+   ```
     Alternatively, set the `OPENAI_API_TOKEN` environment variable.
 
 ## Building (macOS)
 
-From the project root directory:
-
-```bash
-g++ -std=c++17 src/main.cpp src/mainWindow.cpp src/ai_handler.cpp -o ai-terminal `wx-config --cppflags --libs` -I./src/headers -I./src/libs -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto
-```
+1. Create and navigate to a build directory:
+   ```bash
+   mkdir -p build && cd build
+   ```
+2. Run CMake to configure the project. We pass `CMAKE_PREFIX_PATH` to help it find Homebrew packages.
+   ```bash
+   cmake -DCMAKE_PREFIX_PATH=/opt/homebrew ..
+   ```
+3. Compile the project:
+   ```bash
+   make
+   ```
 
 ## Running
 
-From the project root directory:
-
-```bash
-./ai-terminal
-```
+1. **IMPORTANT**: The application looks for the `.env` file in the same directory as the executable. Before running, you must copy your `.env` file from the project root into the `build/` directory:
+   ```bash
+   cp .env build/
+   ```
+2. Execute the compiled binary from the project root:
+   ```bash
+   ./build/ai-terminal.app/Contents/MacOS/ai-terminal
+   ```
 
 ## Project Structure
 
