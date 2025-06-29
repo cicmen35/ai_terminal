@@ -52,7 +52,7 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 
 1. **IMPORTANT**: The application looks for the `.env` file in the same directory as the executable. Before running, you must copy your `.env` file from the project root into the `build/` directory:
    ```bash
-   cp .env build/
+   cp .env build/ai-terminal.app/Contents/MacOS/
    ```
 2. Execute the compiled binary from the project root:
    ```bash
