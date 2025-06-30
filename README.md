@@ -5,15 +5,15 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 ## Features
 
 - Dual panel: Terminal and AI assistant.
-- Standard terminal operations (`cd`, `clear` handled).
+- Standard terminal operations 
 - AI Assistant (OpenAI GPT-3.5-turbo+) using terminal output as context.
 - Secure API key loading via `.env` file or environment variable.
 - Core logic is cross-platform (wxWidgets).
 
 ## Compatibility
 
-- **macOS:** Developed and tested on macOS.
-- **Other Platforms (Windows/Linux):** The project now uses CMake, which makes it highly portable. You will need to ensure wxWidgets and OpenSSL are installed and discoverable by CMake on your system.
+- **macOS:** Developed on macOS.
+- **Other Platforms (Windows/Linux):** You will need to ensure wxWidgets and OpenSSL are installed and discoverable by CMake on your system.
 
 ## Prerequisites (macOS)
 
@@ -63,13 +63,6 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 
 - `src/`: Main C++ source files (`.cpp`).
 - `src/headers/`: Project header files (`.h`).
-- `src/libs/`: Third-party header-only libraries.
-- `.env`: OpenAI API key storage.
-- `.gitignore`: Git ignore rules.
+- `src/libs/`: Third-party libraries.
+- `.env`: OpenAI API key.
 
-## Potential Future Enhancements
-
-- CMake build system for cross-platform support.
-- Windows/Linux build instructions.
-- Command history & tab completion.
-- Improved AI context handling.
