@@ -31,6 +31,7 @@ add_executable(ai-terminal
     src/main.cpp
     src/mainWindow.cpp
     src/ai_handler.cpp
+    src/terminalInput.cpp
 )
 
 # Link libraries

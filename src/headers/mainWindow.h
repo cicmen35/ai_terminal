@@ -6,7 +6,8 @@
 #include <wx/textctrl.h>
 #include <wx/process.h>
 #include <wx/txtstrm.h>
-#include "ai_handler.h" // Include the new AI handler
+#include "ai_handler.h"
+#include "terminalInput.h" 
 
 class MainWindow : public wxFrame
 {
@@ -29,7 +30,7 @@ private:
     wxSplitterWindow* mainSplitter;
     wxPanel* terminalPanel;
     wxTextCtrl* terminalOutput;
-    wxTextCtrl* terminalInput;
+    TerminalInput* terminalInput;
     wxPanel* assistantPanel;
     wxTextCtrl* assistantOutput;
     wxTextCtrl* assistantInput;

@@ -50,7 +50,7 @@ void MainWindow::SetupUI()
     terminalOutput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
     terminalSizer->Add(terminalOutput, 1, wxEXPAND | wxALL, 5);
 
-    terminalInput = new wxTextCtrl(terminalPanel, ID_TERMINAL_INPUT, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    terminalInput = new TerminalInput(terminalPanel, ID_TERMINAL_INPUT, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB); // TAB autocomplete
     terminalInput->SetBackgroundColour(wxColour(40, 40, 40));
     terminalInput->SetForegroundColour(wxColour(248, 248, 242));
     terminalInput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
@@ -115,8 +115,9 @@ void MainWindow::ExecuteCommand(const wxString& command)
         wxSetWorkingDirectory(currentPath); // Update internal CWD for wxProcess
         terminalOutput->AppendText(currentPath + "\n");
         return; 
-    } else if (trimmedCommand.StartsWith("cd ")) { // 'cd <path>'
-        wxString newPathArg = trimmedCommand.Mid(2).Trim(); // Get argument after "cd "
+    } else if (trimmedCommand.StartsWith("cd")) { // 'cd <path>'
+        // Get everything after 'cd', then trim it to remove any leading/trailing spaces
+        wxString newPathArg = trimmedCommand.Mid(2).Trim(true).Trim(false);
 
         if (newPathArg.IsEmpty()) { // Handles "cd " (cd followed by only spaces)
             currentPath = wxGetHomeDir();
@@ -125,9 +126,8 @@ void MainWindow::ExecuteCommand(const wxString& command)
             if (wxIsAbsolutePath(newPathArg)) {
                 pathBuilder.Assign(newPathArg);
             } else {
-                // For relative paths, assign the relative path and then make it absolute
-                pathBuilder.Assign(newPathArg);
-                pathBuilder.MakeAbsolute(currentPath); 
+                // For relative paths, construct the full path from the current path and the argument
+                pathBuilder.Assign(currentPath, newPathArg);
             }
             // Normalize path (handles '..', redundant separators, etc.) and keep case.
             // Normalization should happen *after* path is potentially made absolute and combined.
@@ -135,6 +135,7 @@ void MainWindow::ExecuteCommand(const wxString& command)
 
             if (wxDirExists(pathBuilder.GetFullPath())) {
                 currentPath = pathBuilder.GetFullPath();
+                terminalInput->SetCurrentPath(currentPath); 
             } else {
                 terminalOutput->AppendText("cd: no such file or directory: " + newPathArg + "\n");
                 return; // Return if path is invalid
