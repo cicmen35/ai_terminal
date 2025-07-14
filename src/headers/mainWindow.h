@@ -7,7 +7,7 @@
 #include <wx/process.h>
 #include <wx/txtstrm.h>
 #include "ai_handler.h"
-#include "terminalInput.h" 
+#include "autocomplete.h" 
 
 class MainWindow : public wxFrame
 {
@@ -30,7 +30,7 @@ private:
     wxSplitterWindow* mainSplitter;
     wxPanel* terminalPanel;
     wxTextCtrl* terminalOutput;
-    TerminalInput* terminalInput;
+    AutocompleteInput* terminalInput;
     wxPanel* assistantPanel;
     wxTextCtrl* assistantOutput;
     wxTextCtrl* assistantInput;

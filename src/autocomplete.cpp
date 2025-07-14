@@ -1,23 +1,25 @@
-#include "headers/terminalInput.h"
+#include "headers/autocomplete.h"
 #include <wx/dir.h>
 #include <algorithm>
 
-BEGIN_EVENT_TABLE(TerminalInput, wxTextCtrl)
-    EVT_KEY_DOWN(TerminalInput::OnKeyDown)
+BEGIN_EVENT_TABLE(AutocompleteInput, wxTextCtrl)
+    EVT_KEY_DOWN(AutocompleteInput::OnKeyDown)
 END_EVENT_TABLE()
 
-TerminalInput::TerminalInput(wxWindow* parent, 
+AutocompleteInput::AutocompleteInput(wxWindow* parent,
                            wxWindowID id,
+                            wxTextCtrl* outputCtrl,
                            const wxString& value,
                            const wxPoint& pos,
                            const wxSize& size,
                            long style)
-    : wxTextCtrl(parent, id, value, pos, size, style)
+    : wxTextCtrl(parent, id, value, pos, size, style),
+      m_outputCtrl(outputCtrl)
 {
-    m_currentPath = wxGetHomeDir();
+        m_currentPath = wxGetHomeDir();
 }
 
-void TerminalInput::OnKeyDown(wxKeyEvent& event)
+void AutocompleteInput::OnKeyDown(wxKeyEvent& event)
 {
     if (event.GetKeyCode() == WXK_TAB && !event.HasAnyModifiers()) {
         HandleTabCompletion();
@@ -26,7 +28,7 @@ void TerminalInput::OnKeyDown(wxKeyEvent& event)
     event.Skip(); // Skip for all other keys
 }
 
-wxString TerminalInput::GetCurrentWord() const
+wxString AutocompleteInput::GetCurrentWord() const
 {
     long insertionPoint = GetInsertionPoint();
     wxString text = GetValue();
@@ -41,7 +43,7 @@ wxString TerminalInput::GetCurrentWord() const
     return text.Mid(start, insertionPoint - start);
 }
 
-std::vector<wxString> TerminalInput::GetCompletionCandidates(const wxString& partial) const
+std::vector<wxString> AutocompleteInput::GetCompletionCandidates(const wxString& partial) const
 {
     std::vector<wxString> candidates;
     wxString searchPath = m_currentPath;
@@ -98,7 +100,7 @@ std::vector<wxString> TerminalInput::GetCompletionCandidates(const wxString& par
     return candidates;
 }
 
-void TerminalInput::HandleTabCompletion()
+void AutocompleteInput::HandleTabCompletion()
 {
     wxString partial = GetCurrentWord();
     if (partial.IsEmpty()) {
@@ -139,22 +141,15 @@ void TerminalInput::HandleTabCompletion()
         }
         
         // Show all candidates
-        wxString output = "\n";
-        for (size_t i = 0; i < candidates.size(); ++i) {
-            output += candidates[i];
-            if (i < candidates.size() - 1) {
-                output += "  ";  // Add two spaces between candidates
+        if (m_outputCtrl && !candidates.empty()) {
+            wxString output = "\n";
+            for (size_t i = 0; i < candidates.size(); ++i) {
+                output += candidates[i];
+                if (i < candidates.size() - 1) output += "  ";
             }
+            output += "\n> " + GetValue();
+            m_outputCtrl->AppendText(output);
         }
-        output += "\n"; // Add a newline after the list
-        
-        // Show the current command again
-        output += "> " + GetValue() + "\n";
-        
-        // Send the output to the terminal
-        wxCommandEvent evt(wxEVT_TEXT_ENTER);
-        evt.SetString(output);
-        wxPostEvent(GetParent(), evt);
         
         // If we have a longer common prefix than what's typed, complete to that
         if (commonPrefix.length() > partial.length()) {

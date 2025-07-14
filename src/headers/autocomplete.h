@@ -1,15 +1,16 @@
-#ifndef TERMINAL_INPUT_H
-#define TERMINAL_INPUT_H
+#ifndef AUTOCOMPLETE_INPUT_H
+#define AUTOCOMPLETE_INPUT_H
 
 #include <wx/wx.h>
 #include <wx/filename.h>
 #include <vector>
 #include <string>
 
-class TerminalInput : public wxTextCtrl {
+class AutocompleteInput : public wxTextCtrl {
 public:
-    TerminalInput(wxWindow* parent, 
+    AutocompleteInput(wxWindow* parent, 
                  wxWindowID id,
+                 wxTextCtrl* outputCtrl,
                  const wxString& value = wxEmptyString,
                  const wxPoint& pos = wxDefaultPosition,
                  const wxSize& size = wxDefaultSize,
@@ -25,8 +26,9 @@ private:
     wxString GetCurrentWord() const;
 
     wxString m_currentPath;
+    wxTextCtrl* m_outputCtrl;
     
     DECLARE_EVENT_TABLE()
 };
 
-#endif // TERMINAL_INPUT_H
+#endif // AUTOCOMPLETE_INPUT_H

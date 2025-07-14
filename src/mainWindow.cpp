@@ -50,7 +50,7 @@ void MainWindow::SetupUI()
     terminalOutput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
     terminalSizer->Add(terminalOutput, 1, wxEXPAND | wxALL, 5);
 
-    terminalInput = new TerminalInput(terminalPanel, ID_TERMINAL_INPUT, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB); // TAB autocomplete
+    terminalInput = new AutocompleteInput(terminalPanel, ID_TERMINAL_INPUT, terminalOutput, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB); // TAB autocomplete
     terminalInput->SetBackgroundColour(wxColour(40, 40, 40));
     terminalInput->SetForegroundColour(wxColour(248, 248, 242));
     terminalInput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
