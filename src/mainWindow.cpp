@@ -28,6 +28,7 @@ MainWindow::MainWindow(const wxString& title)
     aiHandler = std::make_unique<AIHandler>(); // Initialize AI Handler
     SetupUI();
     Bind(wxEVT_AI_RESPONSE, &MainWindow::OnAIResponse, this);
+    Bind(wxEVT_AI_STREAM_CHUNK, &MainWindow::OnAIStreamChunk, this);
     Centre();
 }
 
@@ -181,9 +182,9 @@ void MainWindow::OnAskAssistant(wxCommandEvent& event)
     wxString context = terminalContent.Right(1000); // Get last 1000 chars
 
     // Spawn background worker so UI stays responsive
-    assistantOutput->AppendText("Assistant: thinking...\n");
+    assistantOutput->AppendText("Assistant: "); // start line
 
-    AIWorkerThread* worker = new AIWorkerThread(this, aiHandler.get(), question, context);
+    AIStreamWorkerThread* worker = new AIStreamWorkerThread(this, aiHandler.get(), question, context);
     if (worker->Run() != wxTHREAD_NO_ERROR)
     {
         assistantOutput->AppendText("Assistant: failed to start background task\n");
@@ -193,8 +194,18 @@ void MainWindow::OnAskAssistant(wxCommandEvent& event)
 
 void MainWindow::OnAIResponse(wxThreadEvent& event)
 {
-    // Remove placeholder text and append real reply
-    assistantOutput->AppendText("Assistant: " + event.GetString() + "\n");
+    // complete line and append newline
+    assistantOutput->AppendText(event.GetString() + "\n");
+    assistantOutput->ShowPosition(assistantOutput->GetLastPosition());
+}
+
+void MainWindow::OnAIStreamChunk(wxThreadEvent& event)
+{
+    if (event.GetInt() == 0) {
+        assistantOutput->AppendText(event.GetString());
+    } else {
+        assistantOutput->AppendText("\n");
+    }
     assistantOutput->ShowPosition(assistantOutput->GetLastPosition());
 }
 

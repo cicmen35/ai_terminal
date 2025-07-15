@@ -24,7 +24,10 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/headers
     ${CMAKE_CURRENT_SOURCE_DIR}/src/libs
     ${OpenSSL_INCLUDE_DIR} # Add OpenSSL include directory
+    ${CURL_INCLUDE_DIRS}
 )
+
+find_package(CURL REQUIRED)
 
 # Define the executable and its source files
 add_executable(ai-terminal
@@ -33,6 +36,7 @@ add_executable(ai-terminal
     src/ai_handler.cpp
     src/autocomplete.cpp
     src/ai_worker.cpp
+    src/ai_stream_worker.cpp
 )
 
 # Link libraries
@@ -41,6 +45,7 @@ target_link_libraries(ai-terminal
     ${wxWidgets_LIBRARIES}
     OpenSSL::SSL
     OpenSSL::Crypto
+    ${CURL_LIBRARIES}
 )
 
 # Add wxWidgets compile flags

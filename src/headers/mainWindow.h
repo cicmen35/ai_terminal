@@ -10,6 +10,7 @@
 #include "ai_handler.h"
 #include "autocomplete.h" 
 #include "ai_worker.h"
+#include "ai_stream_worker.h"
 
 class MainWindow : public wxFrame
 {
@@ -24,6 +25,7 @@ private:
     void OnProcessTerminated(wxProcessEvent& event);
     void OnIdle(wxIdleEvent& event);
     void OnAIResponse(wxThreadEvent& event);
+    void OnAIStreamChunk(wxThreadEvent& event);
 
     // Helper methods
     void SetupUI();
