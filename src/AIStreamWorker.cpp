@@ -1,4 +1,4 @@
-#include "ai_stream_worker.h"
+#include "AIStreamWorker.h"
 #include <curl/curl.h>
 #include "json.hpp"
 

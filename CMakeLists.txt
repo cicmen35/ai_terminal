@@ -33,10 +33,12 @@ find_package(CURL REQUIRED)
 add_executable(ai-terminal
     src/main.cpp
     src/mainWindow.cpp
-    src/ai_handler.cpp
-    src/autocomplete.cpp
-    src/ai_worker.cpp
-    src/ai_stream_worker.cpp
+    src/AIHandler.cpp
+    src/Autocomplete.cpp
+    src/AIWorker.cpp
+    src/AIStreamWorker.cpp
+    src/TerminalPane.cpp
+    src/AssistantPane.cpp
 )
 
 # Link libraries

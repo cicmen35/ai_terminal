@@ -2,7 +2,7 @@
 #include <wx/filename.h> // For wxFileName and path normalization
 #include <wx/utils.h>   // For wxKill
 #include <memory>
-#include "ai_worker.h"
+#include "AIWorker.h"
 
 // IDs for the controls and the menu commands
 enum
@@ -48,40 +48,14 @@ void MainWindow::SetupUI()
     mainSplitter = new wxSplitterWindow(this, wxID_ANY);
     mainSplitter->SetMinimumPaneSize(200);
 
-    // --- Terminal Panel (Left) ---
-    terminalPanel = new wxPanel(mainSplitter);
-    wxBoxSizer* terminalSizer = new wxBoxSizer(wxVERTICAL);
-    terminalPanel->SetSizer(terminalSizer);
+    // Create our encapsulated panes. They hand back the pointers to
+    // the controls we still use throughout MainWindow.
+    terminalPane  = new TerminalPane(mainSplitter, ID_TERMINAL_INPUT, terminalOutput, terminalInput);
+    assistantPane = new AssistantPane(mainSplitter, ID_ASSISTANT_INPUT, assistantOutput, assistantInput);
 
-    terminalOutput = new wxTextCtrl(terminalPanel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
-    terminalOutput->SetBackgroundColour(wxColour(40, 40, 40));
-    terminalOutput->SetForegroundColour(wxColour(248, 248, 242));
-    terminalOutput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
-    terminalSizer->Add(terminalOutput, 1, wxEXPAND | wxALL, 5);
+    // Layout
+    mainSplitter->SplitVertically(terminalPane, assistantPane, 800);
 
-    terminalInput = new AutocompleteInput(terminalPanel, ID_TERMINAL_INPUT, terminalOutput, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB); // TAB autocomplete
-    terminalInput->SetBackgroundColour(wxColour(40, 40, 40));
-    terminalInput->SetForegroundColour(wxColour(248, 248, 242));
-    terminalInput->SetFont(wxFont(18, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
-    terminalSizer->Add(terminalInput, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
-
-    // --- Assistant Panel (Right) ---
-    assistantPanel = new wxPanel(mainSplitter);
-    wxBoxSizer* assistantSizer = new wxBoxSizer(wxVERTICAL);
-    assistantPanel->SetSizer(assistantSizer);
-
-    assistantOutput = new wxTextCtrl(assistantPanel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
-    assistantOutput->SetBackgroundColour(wxColour(46, 52, 64));
-    assistantOutput->SetForegroundColour(wxColour(236, 239, 244));
-    assistantSizer->Add(assistantOutput, 1, wxEXPAND | wxALL, 5);
-
-    assistantInput = new wxTextCtrl(assistantPanel, ID_ASSISTANT_INPUT, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-    assistantInput->SetBackgroundColour(wxColour(46, 52, 64));
-    assistantInput->SetForegroundColour(wxColour(236, 239, 244));
-    assistantSizer->Add(assistantInput, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
-
-    // Split the window and set initial messages
-    mainSplitter->SplitVertically(terminalPanel, assistantPanel, 800);
     terminalOutput->AppendText("Welcome to AI Terminal Emulator\n");
     assistantOutput->AppendText("AI Terminal Assistant\n");
 }

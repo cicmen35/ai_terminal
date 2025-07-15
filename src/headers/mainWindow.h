@@ -7,10 +7,12 @@
 #include <wx/process.h>
 #include <wx/txtstrm.h>
 #include <memory>
-#include "ai_handler.h"
-#include "autocomplete.h" 
-#include "ai_worker.h"
-#include "ai_stream_worker.h"
+#include "AIHandler.h"
+#include "Autocomplete.h"
+#include "TerminalPane.h"
+#include "AssistantPane.h" 
+#include "AIWorker.h"
+#include "AIStreamWorker.h"
 
 class MainWindow : public wxFrame
 {
@@ -33,10 +35,10 @@ private:
 
     // UI Components
     wxSplitterWindow* mainSplitter;
-    wxPanel* terminalPanel;
+    TerminalPane* terminalPane;
     wxTextCtrl* terminalOutput;
     AutocompleteInput* terminalInput;
-    wxPanel* assistantPanel;
+    AssistantPane* assistantPane;
     wxTextCtrl* assistantOutput;
     wxTextCtrl* assistantInput;
 

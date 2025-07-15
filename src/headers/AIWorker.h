@@ -5,7 +5,7 @@
 #include <wx/event.h>
 #include <wx/string.h>
 
-#include "ai_handler.h"
+#include "AIHandler.h"
 
 // Custom event fired when the background AI request completes
 wxDECLARE_EVENT(wxEVT_AI_RESPONSE, wxThreadEvent);

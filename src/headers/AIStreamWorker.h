@@ -4,7 +4,7 @@
 #include <wx/thread.h>
 #include <wx/event.h>
 #include <wx/string.h>
-#include "ai_handler.h"
+#include "AIHandler.h"
 
 // Event carries chunks of the streamed response.
 // evt.GetString() -> next token

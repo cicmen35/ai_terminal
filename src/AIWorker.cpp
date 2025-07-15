@@ -1,4 +1,4 @@
-#include "ai_worker.h"
+#include "AIWorker.h"
 
 wxDEFINE_EVENT(wxEVT_AI_RESPONSE, wxThreadEvent);
 
