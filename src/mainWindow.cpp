@@ -93,6 +93,7 @@ void MainWindow::OnCommandEntered(wxCommandEvent& event)
     if (command.IsEmpty()) return;
 
     terminalOutput->AppendText("\n> " + command + "\n");
+    terminalInput->AddToHistory(command);
     terminalInput->Clear();
 
     ExecuteCommand(command);

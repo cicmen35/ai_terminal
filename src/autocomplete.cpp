@@ -21,11 +21,46 @@ AutocompleteInput::AutocompleteInput(wxWindow* parent,
 
 void AutocompleteInput::OnKeyDown(wxKeyEvent& event)
 {
-    if (event.GetKeyCode() == WXK_TAB && !event.HasAnyModifiers()) {
+    int key = event.GetKeyCode();
+    if (key == WXK_UP && !event.HasAnyModifiers()) {
+        if (!m_history.empty()) {
+            if (m_historyPos == -1) m_historyPos = static_cast<int>(m_history.size()) - 1;
+            else if (m_historyPos > 0) --m_historyPos;
+            SetValue(m_history[m_historyPos]);
+            SetInsertionPointEnd();
+        }
+        return;
+    } else if (key == WXK_DOWN && !event.HasAnyModifiers()) {
+        if (!m_history.empty() && m_historyPos != -1) {
+            if (m_historyPos < static_cast<int>(m_history.size()) - 1) {
+                ++m_historyPos;
+                SetValue(m_history[m_historyPos]);
+            } else {
+                m_historyPos = -1;
+                Clear();
+            }
+            SetInsertionPointEnd();
+        }
+        return;
+    }
+    if (key == WXK_TAB && !event.HasAnyModifiers()) {
         HandleTabCompletion();
         return; 
     }
-    event.Skip(); // Skip for all other keys
+    // Reset history position on any other key press (except navigation)
+    m_historyPos = -1;
+    event.Skip(); // Skip for remaining keys
+}
+
+void AutocompleteInput::AddToHistory(const wxString& command)
+{
+    wxString trimmed = command;
+    trimmed.Trim(true);
+    trimmed.Trim(false);
+    if (trimmed.IsEmpty()) return;
+    if (m_history.empty() || m_history.back() != trimmed)
+        m_history.push_back(trimmed);
+    m_historyPos = -1;
 }
 
 wxString AutocompleteInput::GetCurrentWord() const
