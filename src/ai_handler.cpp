@@ -53,7 +53,7 @@ bool AIHandler::LoadAPIKey() {
 
 wxString AIHandler::GetAIResponse(const wxString& userInput, const wxString& terminalContext) {
     if (apiKey.empty()) {
-        return "Error: API key not configured.";
+        return "Error: API key not configured. Check the openai api connection.";
     }
     std::cout << "API key successfully configured.";
     // Use SSLClient for HTTPS connections

@@ -6,6 +6,7 @@
 #include <wx/textctrl.h>
 #include <wx/process.h>
 #include <wx/txtstrm.h>
+#include <memory>
 #include "ai_handler.h"
 #include "autocomplete.h" 
 
@@ -36,11 +37,11 @@ private:
     wxTextCtrl* assistantInput;
 
     // Process handling
-    wxProcess* currentProcess;
+    std::unique_ptr<wxProcess> currentProcess;
     wxString currentPath;
 
     // AI Handler
-    AIHandler* aiHandler; 
+    std::unique_ptr<AIHandler> aiHandler; 
 
     // Event table declaration
     wxDECLARE_EVENT_TABLE();

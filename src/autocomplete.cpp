@@ -1,4 +1,4 @@
-#include "headers/autocomplete.h"
+#include "autocomplete.h"
 #include <wx/dir.h>
 #include <algorithm>
 

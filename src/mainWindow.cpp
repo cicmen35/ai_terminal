@@ -1,5 +1,7 @@
 #include "mainWindow.h"
 #include <wx/filename.h> // For wxFileName and path normalization
+#include <wx/utils.h>   // For wxKill
+#include <memory>
 
 // IDs for the controls and the menu commands
 enum
@@ -19,10 +21,10 @@ wxEND_EVENT_TABLE()
 MainWindow::MainWindow(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1200, 800))
 {
-    currentProcess = nullptr;
+    currentProcess.reset();
     currentPath = wxGetHomeDir(); // Set initial path to user's home directory
     wxSetWorkingDirectory(currentPath); // Change the application's CWD to user's home
-    aiHandler = new AIHandler(); // Initialize AI Handler
+    aiHandler = std::make_unique<AIHandler>(); // Initialize AI Handler
     SetupUI();
     Centre();
 }
@@ -30,7 +32,11 @@ MainWindow::MainWindow(const wxString& title)
 // Destructor to clean up AIHandler
 MainWindow::~MainWindow()
 {
-    delete aiHandler; // Clean up AI Handler
+    // unique_ptr will clean up aiHandler automatically
+    if (currentProcess) {
+        wxKill(currentProcess->GetPid(), wxSIGKILL, nullptr);
+        currentProcess.reset();
+    }
 }
 
 void MainWindow::SetupUI()
@@ -79,6 +85,7 @@ void MainWindow::SetupUI()
 
 void MainWindow::OnCommandEntered(wxCommandEvent& event)
 {
+    wxUnusedVar(event);
     wxString command = terminalInput->GetValue();
     if (command.IsEmpty()) return;
 
@@ -147,20 +154,21 @@ void MainWindow::ExecuteCommand(const wxString& command)
     }
 
     // 4. If none of the above, execute as a general command
-    currentProcess = new wxProcess(this);
+    currentProcess = std::make_unique<wxProcess>(this);
     currentProcess->Redirect();
 
     // Use the original 'command' for wxExecute for fidelity, not trimmedCommand.
-    long pid = wxExecute(command, wxEXEC_ASYNC, currentProcess);
+    long pid = wxExecute(command, wxEXEC_ASYNC, currentProcess.get());
     if (!pid) {
         terminalOutput->AppendText("Error: Command could not be executed.\n");
-        delete currentProcess;
-        currentProcess = nullptr;
+        currentProcess.reset();
+        currentProcess.reset();
     }
 }
 
 void MainWindow::OnAskAssistant(wxCommandEvent& event)
 {
+    wxUnusedVar(event);
     wxString question = assistantInput->GetValue();
     if (question.IsEmpty()) return;
 
@@ -179,6 +187,7 @@ void MainWindow::OnAskAssistant(wxCommandEvent& event)
 
 void MainWindow::OnIdle(wxIdleEvent& event)
 {
+    wxUnusedVar(event);
     if (!currentProcess) return;
 
     wxInputStream* in = currentProcess->GetInputStream();
@@ -218,6 +227,6 @@ void MainWindow::OnProcessTerminated(wxProcessEvent& event)
     {
         terminalOutput->AppendText(wxString::Format("Process %ld terminated with error code %d.\n", (long)event.GetPid(), event.GetExitCode()));
     }
-    delete currentProcess;
-    currentProcess = nullptr;
+    currentProcess.reset();
+    currentProcess.reset();
 }

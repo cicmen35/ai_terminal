@@ -43,7 +43,8 @@ target_link_libraries(ai-terminal
 )
 
 # Add wxWidgets compile flags
-target_compile_options(ai-terminal PRIVATE ${wxWidgets_CXX_FLAGS})
+# Enable strict warnings
+target_compile_options(ai-terminal PRIVATE ${wxWidgets_CXX_FLAGS} -Wall -Wextra -pedantic)
 
 # --- Optional: For macOS to create a proper .app bundle ---
 if(APPLE)
