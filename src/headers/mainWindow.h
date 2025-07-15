@@ -9,6 +9,7 @@
 #include <memory>
 #include "ai_handler.h"
 #include "autocomplete.h" 
+#include "ai_worker.h"
 
 class MainWindow : public wxFrame
 {
@@ -22,6 +23,7 @@ private:
     void OnAskAssistant(wxCommandEvent& event);
     void OnProcessTerminated(wxProcessEvent& event);
     void OnIdle(wxIdleEvent& event);
+    void OnAIResponse(wxThreadEvent& event);
 
     // Helper methods
     void SetupUI();

@@ -2,6 +2,7 @@
 #include <wx/filename.h> // For wxFileName and path normalization
 #include <wx/utils.h>   // For wxKill
 #include <memory>
+#include "ai_worker.h"
 
 // IDs for the controls and the menu commands
 enum
@@ -26,6 +27,7 @@ MainWindow::MainWindow(const wxString& title)
     wxSetWorkingDirectory(currentPath); // Change the application's CWD to user's home
     aiHandler = std::make_unique<AIHandler>(); // Initialize AI Handler
     SetupUI();
+    Bind(wxEVT_AI_RESPONSE, &MainWindow::OnAIResponse, this);
     Centre();
 }
 
@@ -162,7 +164,6 @@ void MainWindow::ExecuteCommand(const wxString& command)
     if (!pid) {
         terminalOutput->AppendText("Error: Command could not be executed.\n");
         currentProcess.reset();
-        currentProcess.reset();
     }
 }
 
@@ -179,10 +180,22 @@ void MainWindow::OnAskAssistant(wxCommandEvent& event)
     wxString terminalContent = terminalOutput->GetValue();
     wxString context = terminalContent.Right(1000); // Get last 1000 chars
 
-    // Get response from AI Handler, now with context
-    wxString aiResponse = aiHandler->GetAIResponse(question, context);
-    assistantOutput->AppendText("Assistant: " + aiResponse + "\n");
-    assistantOutput->ShowPosition(assistantOutput->GetLastPosition()); // Scroll to show the latest response
+    // Spawn background worker so UI stays responsive
+    assistantOutput->AppendText("Assistant: thinking...\n");
+
+    AIWorkerThread* worker = new AIWorkerThread(this, aiHandler.get(), question, context);
+    if (worker->Run() != wxTHREAD_NO_ERROR)
+    {
+        assistantOutput->AppendText("Assistant: failed to start background task\n");
+        delete worker;
+    }
+}
+
+void MainWindow::OnAIResponse(wxThreadEvent& event)
+{
+    // Remove placeholder text and append real reply
+    assistantOutput->AppendText("Assistant: " + event.GetString() + "\n");
+    assistantOutput->ShowPosition(assistantOutput->GetLastPosition());
 }
 
 void MainWindow::OnIdle(wxIdleEvent& event)
@@ -227,6 +240,5 @@ void MainWindow::OnProcessTerminated(wxProcessEvent& event)
     {
         terminalOutput->AppendText(wxString::Format("Process %ld terminated with error code %d.\n", (long)event.GetPid(), event.GetExitCode()));
     }
-    currentProcess.reset();
     currentProcess.reset();
 }

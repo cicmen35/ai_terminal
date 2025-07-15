@@ -32,6 +32,7 @@ add_executable(ai-terminal
     src/mainWindow.cpp
     src/ai_handler.cpp
     src/autocomplete.cpp
+    src/ai_worker.cpp
 )
 
 # Link libraries
