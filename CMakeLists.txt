@@ -21,9 +21,12 @@ find_package(OpenSSL REQUIRED)
 
 # Add include directories for your project headers and libs
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libs
-    ${OpenSSL_INCLUDE_DIR} # Add OpenSSL include directory
+    ${PROJECT_SOURCE_DIR}/src/ui
+    ${PROJECT_SOURCE_DIR}/src/ui/headers       
+    ${PROJECT_SOURCE_DIR}/src/ai
+    ${PROJECT_SOURCE_DIR}/src/ai/headers        
+    ${PROJECT_SOURCE_DIR}/src/libs
+    ${OpenSSL_INCLUDE_DIR}
     ${CURL_INCLUDE_DIRS}
 )
 
@@ -32,13 +35,13 @@ find_package(CURL REQUIRED)
 # Define the executable and its source files
 add_executable(ai-terminal
     src/main.cpp
-    src/mainWindow.cpp
-    src/AIHandler.cpp
-    src/Autocomplete.cpp
-    src/AIWorker.cpp
-    src/AIStreamWorker.cpp
-    src/TerminalPane.cpp
-    src/AssistantPane.cpp
+    src/ui/mainWindow.cpp
+    src/ai/AIHandler.cpp
+    src/ui/Autocomplete.cpp
+    src/ai/AIWorker.cpp
+    src/ai/AIStreamWorker.cpp
+    src/ui/TerminalPane.cpp
+    src/ui/AssistantPane.cpp
 )
 
 # Link libraries
