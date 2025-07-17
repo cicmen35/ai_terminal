@@ -2,28 +2,27 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"      // For HTTP requests
 #include "json.hpp"       // For JSON parsing
-#include <fstream>               // For file reading (for .env)
-#include <iostream>              // For basic I/O, can be removed if not debugging
-#include <cstdlib>               // For getenv, though we'll parse .env manually for robustness
-#include <wx/stdpaths.h>         // For wxStandardPaths
-#include <wx/filename.h>         // For wxFileName
+#include <fstream>               // For reading .env
+#include <iostream>            
+#include <cstdlib>               
+#include <wx/stdpaths.h>         
+#include <wx/filename.h>         
 
 // Use nlohmann::json for convenience
 using json = nlohmann::json;
 
 AIHandler::AIHandler() {
     if (!LoadAPIKey()) {
-        // Consider how to handle this error more gracefully in a GUI app
-        // For now, we can print an error or set a flag.
+        // handle this error more gracefully in a GUI app
         std::cerr << "Error: Failed to load OpenAI API Key." << std::endl;
         apiKey = ""; // Ensure apiKey is in a known state
     }
 }
 
 bool AIHandler::LoadAPIKey() {
-    // This is a simplified .env parser. For a real app, a more robust parser might be needed.
-    // It expects OPENAI_API_TOKEN=your_key_here on a line in .env
-    // The .env file should be in the same directory as the executable, or adjust path.
+    // simplified .env parser
+    // expects OPENAI_API_TOKEN=your_key_here on a line in .env
+    // .env file should be in the same directory as the executable, or adjust path.
     wxString exePath = wxStandardPaths::Get().GetExecutablePath();
     wxFileName exeFile(exePath);
     wxString envFilePath = exeFile.GetPath() + wxFileName::GetPathSeparator() + ".env";

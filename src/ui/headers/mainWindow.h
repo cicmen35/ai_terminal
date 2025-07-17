@@ -18,7 +18,7 @@ class MainWindow : public wxFrame
 {
 public:
     MainWindow(const wxString& title);
-    ~MainWindow(); // Declare the destructor
+    ~MainWindow(); 
 
 private:
     // Event handlers

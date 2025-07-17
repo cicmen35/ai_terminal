@@ -5,9 +5,6 @@
 #include <wx/textctrl.h>
 #include "Autocomplete.h"
 
-// Simple wrapper panel containing the terminal output window and input field.
-// The constructor forwards back references to the created controls so that
-// MainWindow can continue using them without changing all existing code.
 class TerminalPane : public wxPanel
 {
 public:
