@@ -61,8 +61,8 @@ An AI-powered terminal emulator built with C++ and wxWidgets, featuring a termin
 
 ## Project Structure
 
-- `src/`: Main C++ source files (`.cpp`).
-- `src/headers/`: Project header files (`.h`).
-- `src/libs/`: Third-party libraries.
+- `src/ui/`: User-interface implementation (`.cpp`) and its headers in `src/ui/headers/`.
+- `src/ai/`: AI interaction logic (`.cpp`) and its headers in `src/ai/headers/`.
+- `src/libs/`: Third-party libraries (e.g. `json.hpp`).
 - `.env`: OpenAI API key.
 
