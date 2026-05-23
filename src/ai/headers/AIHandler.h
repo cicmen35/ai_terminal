@@ -8,7 +8,6 @@
 class AIHandler {
 public:
     AIHandler();
-    wxString GetAIResponse(const wxString& userInput, const wxString& terminalContext);
     const std::string& GetAPIKey() const { return apiKey; }
 
 private:

@@ -33,6 +33,34 @@ AIStreamWorkerThread::AIStreamWorkerThread(wxEvtHandler* handler,
     m_requestJson = body.dump();
 }
 
+void AIStreamWorkerThread::PostEvent(int kind, const wxString& text)
+{
+    wxThreadEvent evt(wxEVT_AI_STREAM_CHUNK);
+    evt.SetInt(kind);
+    evt.SetString(text);
+    wxQueueEvent(m_handler, evt.Clone());
+}
+
+void AIStreamWorkerThread::PostError(const wxString& text)
+{
+    if (m_terminalEventPosted) {
+        return;
+    }
+
+    m_terminalEventPosted = true;
+    PostEvent(AI_STREAM_ERROR, text);
+}
+
+void AIStreamWorkerThread::PostComplete()
+{
+    if (m_terminalEventPosted) {
+        return;
+    }
+
+    m_terminalEventPosted = true;
+    PostEvent(AI_STREAM_COMPLETE);
+}
+
 size_t AIStreamWorkerThread::CurlWriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
     auto self = static_cast<AIStreamWorkerThread*>(userdata);
@@ -43,6 +71,7 @@ size_t AIStreamWorkerThread::CurlWriteCallback(char* ptr, size_t size, size_t nm
 
 void AIStreamWorkerThread::HandleBuffer(const std::string& bufferPart)
 {
+    m_responseBody += bufferPart;
     m_accumBuffer += bufferPart;
 
     size_t pos;
@@ -50,15 +79,18 @@ void AIStreamWorkerThread::HandleBuffer(const std::string& bufferPart)
         std::string line = m_accumBuffer.substr(0, pos);
         m_accumBuffer.erase(0, pos + 1);
 
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+
         // Each line starts with "data: "
         const std::string prefix = "data: ";
         if (line.rfind(prefix, 0) != 0) continue; // ignore non-data lines
+
+        m_sawStreamEvent = true;
         std::string data = line.substr(prefix.size());
         if (data == "[DONE]") {
-            // signal completion
-            wxThreadEvent evt(wxEVT_AI_STREAM_CHUNK);
-            evt.SetInt(1);
-            wxQueueEvent(m_handler, evt.Clone());
+            PostComplete();
             continue;
         }
 
@@ -68,10 +100,7 @@ void AIStreamWorkerThread::HandleBuffer(const std::string& bufferPart)
                 auto& delta = chunk["choices"][0]["delta"];
                 if (delta.contains("content")) {
                     std::string token = delta["content"].get<std::string>();
-                    wxThreadEvent evt(wxEVT_AI_STREAM_CHUNK);
-                    evt.SetInt(0);
-                    evt.SetString(wxString(token));
-                    wxQueueEvent(m_handler, evt.Clone());
+                    PostEvent(AI_STREAM_CHUNK, wxString::FromUTF8(token));
                 }
             }
         } catch (...) {
@@ -80,10 +109,42 @@ void AIStreamWorkerThread::HandleBuffer(const std::string& bufferPart)
     }
 }
 
+wxString AIStreamWorkerThread::BuildAPIErrorMessage(long responseCode) const
+{
+    std::string message;
+
+    try {
+        json responseJson = json::parse(m_responseBody);
+        if (responseJson.contains("error")) {
+            const json& error = responseJson["error"];
+            if (error.contains("message") && error["message"].is_string()) {
+                message = error["message"].get<std::string>();
+            }
+        }
+    } catch (...) {
+        // Fall back to the raw response body below.
+    }
+
+    if (message.empty() && !m_responseBody.empty()) {
+        message = m_responseBody;
+    }
+
+    if (message.empty()) {
+        return wxString::Format("Error: Assistant request failed with HTTP status %ld.", responseCode);
+    }
+
+    return wxString::Format("Error: Assistant request failed with HTTP status %ld: %s",
+                            responseCode,
+                            wxString::FromUTF8(message));
+}
+
 wxThread::ExitCode AIStreamWorkerThread::Entry()
 {
     CURL* curl = curl_easy_init();
-    if (!curl) return (wxThread::ExitCode)0;
+    if (!curl) {
+        PostError("Error: Failed to initialize the network client.");
+        return (wxThread::ExitCode)0;
+    }
 
     struct curl_slist* headers = nullptr;
     std::string auth_header = "Authorization: Bearer " + m_aiHandler->GetAPIKey();
@@ -95,6 +156,7 @@ wxThread::ExitCode AIStreamWorkerThread::Entry()
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, m_requestJson.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(m_requestJson.size()));
 
     // Enable HTTP/2 if available for better performance
 #ifdef CURLPIPE_MULTIPLEX
@@ -103,10 +165,20 @@ wxThread::ExitCode AIStreamWorkerThread::Entry()
 
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-        wxThreadEvent evt(wxEVT_AI_STREAM_CHUNK);
-        evt.SetInt(1);
-        evt.SetString(wxString::Format("Error: %s", curl_easy_strerror(res)));
-        wxQueueEvent(m_handler, evt.Clone());
+        PostError(wxString::Format("Error: %s", curl_easy_strerror(res)));
+    } else {
+        long responseCode = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+
+        if (responseCode != 200) {
+            PostError(BuildAPIErrorMessage(responseCode));
+        } else if (!m_terminalEventPosted) {
+            if (m_sawStreamEvent) {
+                PostComplete();
+            } else {
+                PostError("Error: Assistant returned an unexpected response format.");
+            }
+        }
     }
 
     curl_slist_free_all(headers);
