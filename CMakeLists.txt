@@ -13,11 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(wxWidgets REQUIRED COMPONENTS core base)
 include(${wxWidgets_USE_FILE})
 
-# Find OpenSSL
-# CMake should find OpenSSL installed by Homebrew automatically on macOS.
-# If not, you might need to hint CMAKE_PREFIX_PATH or OpenSSL_ROOT_DIR.
-# e.g. set(OpenSSL_ROOT_DIR "/opt/homebrew/opt/openssl@3")
-find_package(OpenSSL REQUIRED)
+find_package(CURL REQUIRED)
 
 # Add include directories for your project headers and libs
 include_directories(
@@ -26,11 +22,8 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src/ai
     ${PROJECT_SOURCE_DIR}/src/ai/headers        
     ${PROJECT_SOURCE_DIR}/src/libs
-    ${OpenSSL_INCLUDE_DIR}
     ${CURL_INCLUDE_DIRS}
 )
-
-find_package(CURL REQUIRED)
 
 # Define the executable and its source files
 add_executable(ai-terminal
@@ -38,7 +31,6 @@ add_executable(ai-terminal
     src/ui/mainWindow.cpp
     src/ai/AIHandler.cpp
     src/ui/Autocomplete.cpp
-    src/ai/AIWorker.cpp
     src/ai/AIStreamWorker.cpp
     src/ui/TerminalPane.cpp
     src/ui/AssistantPane.cpp
@@ -48,8 +40,6 @@ add_executable(ai-terminal
 target_link_libraries(ai-terminal
     PRIVATE
     ${wxWidgets_LIBRARIES}
-    OpenSSL::SSL
-    OpenSSL::Crypto
     ${CURL_LIBRARIES}
 )
 
@@ -70,5 +60,5 @@ endif()
 message(STATUS "wxWidgets Libraries: ${wxWidgets_LIBRARIES}")
 message(STATUS "wxWidgets Include Dirs: ${wxWidgets_INCLUDE_DIRS}")
 message(STATUS "wxWidgets CXX Flags: ${wxWidgets_CXX_FLAGS}")
-message(STATUS "OpenSSL Include Dir: ${OpenSSL_INCLUDE_DIR}")
-message(STATUS "OpenSSL Libraries: ${OpenSSL_LIBRARIES}")
+message(STATUS "CURL Include Dirs: ${CURL_INCLUDE_DIRS}")
+message(STATUS "CURL Libraries: ${CURL_LIBRARIES}")
